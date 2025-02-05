@@ -42,7 +42,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           aws ecs update-service \
-            --cluster my-ecs-cluster \
-            --service my-django-service \
+            --cluster django-ecs-cluster \
+            --service task1 \
             --force-new-deployment \
             --region eu-north-1
