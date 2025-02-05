@@ -1,0 +1,48 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python manage.py test
+
+      - name: Build and push Docker image
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          docker build -t unchained_postgres:latest .
+          aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 361769585809.dkr.ecr.eu-north-1.amazonaws.com
+          docker tag unchained_postgres:latest 361769585809.dkr.ecr.eu-north-1.amazonaws.com/django-ecs-cluster/django-repo:latest
+          docker push 361769585809.dkr.ecr.eu-north-1.amazonaws.com/django-ecs-cluster/django-repo:latest
+
+      - name: Update AWS ECS service
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws ecs update-service \
+            --cluster my-ecs-cluster \
+            --service my-django-service \
+            --force-new-deployment
+
