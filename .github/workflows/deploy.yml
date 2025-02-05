@@ -45,4 +45,4 @@ jobs:
             --cluster my-ecs-cluster \
             --service my-django-service \
             --force-new-deployment
-
+            --region eu-north-1
